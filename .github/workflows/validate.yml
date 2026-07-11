@@ -1,0 +1,23 @@
+name: validate
+
+on: [push, pull_request]
+
+jobs:
+  build-and-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: pip install numpy scipy
+      - name: Generate reference model output
+        run: python reference_model.py
+      - name: Build Q15 C implementation
+        run: gcc -O2 -Wall -Werror -o fir_q15 fixed_point_filter.c
+      - name: Run C filter
+        run: ./fir_q15
+      - name: Validate C output against reference (fails if error > 3 LSBs)
+        run: python compare_results.py
